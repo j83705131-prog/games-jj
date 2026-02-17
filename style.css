@@ -1,0 +1,98 @@
+/* Remove margens e preenchimentos padrão do navegador */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Esconde barras de rolagem */
+  font-family: sans-serif;
+}
+
+/* O canvas do jogo deve preencher toda a tela */
+#gameCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
+}
+
+/* Container para a interface do usuário (placar, etc.) */
+#ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: rgb(201, 29, 29);
+  pointer-events: none; /* Permite que cliques atravessem a UI para o jogo */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Estilo do placar */
+#score {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-size: 24px;
+  text-shadow: 2px 2px 4px #47b631;
+}
+
+/* Estilo da mira no centro da tela */
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 30px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px #000000;
+}
+
+/* Estilo da mensagem de vitória */
+#win-message {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  text-shadow: 2px 2px 4px #000000;
+}
+
+#win-message h1 {
+  margin: 0;
+  font-size: 48px;
+  color: #ffd700; /* Dourado */
+}
+
+#win-message p {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.level-button {
+  background-color: #ffd700;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.level-button:hover {
+  background-color: #ffed4a;
+}
+
+#level-display {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 24px;
+  text-shadow: 2px 2px 4px #000000;
+}
+
+/* Classe para esconder elementos */
+.hidden {
+  display: none;
+}

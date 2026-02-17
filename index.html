@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>Aventura dos Corações - Jogo 3D</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        overflow: hidden;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        height: 100vh;
+      }
+
+      /* ===== TRAILER STYLES ===== */
+      #trailer-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #trailer-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .fade-transition {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        z-index: 10000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 1s ease-in-out;
+      }
+
+      .fade-transition.active {
+        opacity: 1;
+      }
+
+      /* ===== TELA INICIAL - BOTÃO INICIAR JOGO (START SCREEN OVERLAY) ===== */
+      /* Overlay que aparece DESDE O INÍCIO do trailer, com botão centralizado */
+      #start-screen-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10001;
+        display: flex; /* ===== Visível desde o início (era 'none') ===== */
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.4);
+      }
+
+      /* Botão INICIAR JOGO - fundo laranja, contorno preto, letras brancas */
+      #start-game-btn {
+        font-size: 48px;
+        font-weight: bold;
+        color: #ffffff;
+        background-color: #ff8c00;
+        border: 4px solid #000000;
+        border-radius: 15px;
+        padding: 25px 60px;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      /* Efeito hover do botão */
+      #start-game-btn:hover {
+        background-color: #ffa500;
+        transform: scale(1.05);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+      }
+
+      /* ===== LOBBY STYLES ===== */
+      #lobby {
+        display: none;
+        width: 100%;
+        height: 100vh;
+        position: relative;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      .lobby-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 30px;
+        z-index: 100;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      }
+
+      .player-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: #fff;
+      }
+
+      .player-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        background-image: url('PERSONAGEM.webp');
+        background-size: cover;
+        background-position: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      }
+
+      .player-stats {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .player-name {
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      .player-level {
+        font-size: 12px;
+        opacity: 0.8;
+      }
+
+      .xp-bar {
+        width: 120px;
+        height: 6px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+
+      .xp-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ffd700, #ffed4e);
+        border-radius: 3px;
+        transition: width 0.5s ease;
+      }
+
+      /* ===== NAVIGATION MENU ===== */
+      .nav-menu {
+        position: absolute;
+        top: 80px;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        z-index: 99;
+      }
+
+      .nav-item {
+        color: #fff;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 20px;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .nav-item:hover, .nav-item.active {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      }
+
+      /* ===== MAIN CONTENT AREA ===== */
+      .content-area {
+        position: absolute;
+        top: 140px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 30px;
+        overflow-y: auto;
+      }
+
+      .content-section {
+        display: none;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+
+      .content-section.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ===== LEVELS SECTION ===== */
+      .levels-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .level-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .level-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      .level-card.locked {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .level-card.completed::before {
+        content: '✓';
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        color: #4CAF50;
+      }
+
+      .level-number {
+        font-size: 48px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        background: linear-gradient(45deg, #ffd700, #ffed4e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .level-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .level-description {
+        font-size: 14px;
+        opacity: 0.8;
+        margin-bottom: 15px;
+      }
+
+      .level-stats {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        opacity: 0.7;
+      }
+
+      .level-xp {
+        color: #ffd700;
+        font-weight: bold;
+      }
+
+      /* ===== ACHIEVEMENTS SECTION ===== */
+      .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .achievement-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        color: #fff;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      .achievement-card.unlocked {
+        border-color: #4CAF50;
+        background: rgba(76, 175, 80, 0.2);
+      }
+
+      .achievement-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      .achievement-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #ffd700, #ffed4e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+
+      .achievement-info h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .achievement-info p {
+        margin: 0;
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      .achievement-progress {
+        width: 100%;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+
+      .achievement-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        border-radius: 4px;
+        transition: width 0.5s ease;
+      }
+
+      /* ===== CARDS SECTION ===== */
+      .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .card-item {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        color: #fff;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .card-item.locked {
+        opacity: 0.3;
+        filter: grayscale(100%);
+      }
+
+      .card-item:hover:not(.locked) {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      }
+
+      .card-rarity {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: bold;
+      }
+
+      .card-rarity.comum { background: #666; }
+      .card-rarity.raro { background: #2196F3; }
+      .card-rarity.epico { background: #9C27B0; }
+      .card-rarity.lendario { background: #FF9800; }
+
+      .card-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+        margin: 0 auto 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+      }
+
+      .card-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .card-description {
+        font-size: 12px;
+        opacity: 0.8;
+      }
+
+      /* ===== GAME CANVAS (HIDDEN BY DEFAULT) ===== */
+      #gameCanvas {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+      }
+
+      /* ===== GAME UI ELEMENTS ===== */
+      .ui-element {
+        position: fixed;
+        z-index: 1001;
+        color: white;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid #fff;
+        display: none;
+      }
+
+      .ui-element.game-active {
+        display: block;
+      }
+
+      #score {
+        top: 20px;
+        left: 20px;
+        font-size: 24px;
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+      }
+
+      #level-display {
+        top: 20px;
+        right: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+      }
+
+      #win-message {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        min-width: 400px;
+      }
+
+      .instructions {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 14px;
+        text-align: center;
+        z-index: 1001;
+        display: none;
+      }
+
+      .instructions.game-active {
+        display: block;
+      }
+
+      .btn {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .btn:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(45deg, #5a6fd8, #6a4190);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* ===== MOBILE CONTROLS ===== */
+      #joystick {
+        position: fixed;
+        bottom: 40px;
+        left: 40px;
+        width: 120px;
+        height: 120px;
+        background: rgba(128, 128, 128, 0.4);
+        border-radius: 50%;
+        z-index: 1002;
+        display: none;
+      }
+
+      #stick {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        width: 60px;
+        height: 60px;
+        background: rgba(200, 200, 200, 0.6);
+        border-radius: 50%;
+        transition: transform 0.1s;
+      }
+
+      #lookArea {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 50%;
+        height: 70%;
+        z-index: 1002;
+        display: none;
+      }
+
+      #jumpButton {
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        width: 80px;
+        height: 80px;
+        background: rgba(76, 175, 80, 0.6);
+        border-radius: 50%;
+        z-index: 1002;
+        display: none;
+        color: white;
+        text-align: center;
+        line-height: 80px;
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      .back-to-lobby {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1002;
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        display: none;
+      }
+
+      .back-to-lobby.game-active {
+        display: block;
+      }
+
+      /* ===== RESPONSIVE DESIGN ===== */
+      @media (max-width: 768px) {
+        .lobby-header {
+          padding: 0 15px;
+          height: 70px;
+        }
+
+        .logo {
+          font-size: 20px;
+        }
+
+        .nav-menu {
+          top: 70px;
+          height: 50px;
+          gap: 20px;
+        }
+
+        .nav-item {
+          font-size: 14px;
+          padding: 8px 15px;
+        }
+
+        .content-area {
+          top: 120px;
+          padding: 15px;
+        }
+
+        .levels-grid,
+        .achievements-grid,
+        .cards-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+
+        .level-card {
+          padding: 15px;
+        }
+
+        .level-number {
+          font-size: 36px;
+        }
+
+        #joystick,
+        #lookArea,
+        #jumpButton {
+          display: block;
+        }
+
+        .instructions {
+          display: none;
+        }
+      }
+
+      @media (hover: none) and (pointer: coarse) {
+        #joystick,
+        #lookArea,
+        #jumpButton {
+          display: block;
+        }
+        .instructions {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- FADE TRANSITION -->
+    <div class="fade-transition" id="fadeTransition"></div>
+
+    <!-- TRAILER CONTAINER -->
+    <div id="trailer-container">
+      <video id="trailer-video" preload="auto" muted>
+        <source src="trailer.mp4" type="video/mp4">
+        Seu navegador não suporta vídeo HTML5.
+      </video>
+    </div>
+
+    <!-- ===== TELA INICIAL - OVERLAY COM BOTÃO INICIAR JOGO ===== -->
+    <!-- Exibido após o trailer congelar no último frame, botão centralizado -->
+    <div id="start-screen-overlay">
+      <button id="start-game-btn">INICIAR JOGO</button>
+    </div>
+
+    <!-- LOBBY INTERFACE -->
+    <div id="lobby">
+      <!-- Header with Player Info -->
+      <div class="lobby-header">
+        <div class="logo">🎮 AVENTURA DOS CORAÇÕES</div>
+        <div class="player-info">
+          <div class="player-avatar"></div>
+          <div class="player-stats">
+            <div class="player-name">Jogador</div>
+            <div class="player-level">Nível <span id="player-level">1</span></div>
+            <div class="xp-bar">
+              <div class="xp-fill" id="xp-fill" style="width: 30%;"></div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 14px;">XP: <span id="player-xp">150</span>/500</div>
+            <div style="font-size: 12px; opacity: 0.8;">Cartas: <span id="player-cards">3</span>/20</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <div class="nav-menu">
+        <div class="nav-item active" data-section="levels">🎯 NÍVEIS</div>
+        <div class="nav-item" data-section="achievements">🏆 CONQUISTAS</div>
+        <div class="nav-item" data-section="cards">🃏 CARTAS</div>
+        <div class="nav-item" data-section="settings">⚙️ OPÇÕES</div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="content-area">
+        <!-- LEVELS SECTION -->
+        <div class="content-section active" id="levels-section">
+          <div class="levels-grid" id="levels-grid">
+            <!-- Levels will be generated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- ACHIEVEMENTS SECTION -->
+        <div class="content-section" id="achievements-section">
+          <div class="achievements-grid" id="achievements-grid">
+            <!-- Achievements will be generated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- CARDS SECTION -->
+        <div class="content-section" id="cards-section">
+          <div class="cards-grid" id="cards-grid">
+            <!-- Cards will be generated by JavaScript -->
+          </div>
+        </div>
+
+        <!-- SETTINGS SECTION -->
+        <div class="content-section" id="settings-section">
+          <div style="text-align: center; color: white; padding: 50px;">
+            <h2>⚙️ Configurações</h2>
+            <div style="max-width: 400px; margin: 0 auto; text-align: left;">
+              <div style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px;">Volume dos Efeitos</label>
+                <input type="range" id="sfx-volume" min="0" max="100" value="50" style="width: 100%;">
+              </div>
+              <div style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px;">Sensibilidade do Mouse</label>
+                <input type="range" id="mouse-sensitivity" min="1" max="10" value="5" style="width: 100%;">
+              </div>
+              <div style="margin: 20px 0;">
+                <label>
+                  <input type="checkbox" id="fullscreen-toggle"> Tela Cheia
+                </label>
+              </div>
+              <div style="margin: 20px 0; text-align: center;">
+                <button class="btn" onclick="resetProgress()">Resetar Progresso</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME CANVAS (THREE.JS) -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- GAME UI ELEMENTS -->
+    <div id="score" class="ui-element">Corações: 0</div>
+    <div id="level-display" class="ui-element">Nível 1</div>
+    <div id="win-message" class="ui-element hidden">
+      <h1>🎉 Parabéns!</h1>
+      <p>Você completou o nível!</p>
+      <p>XP Ganho: <span id="xp-gained">+100</span></p>
+      <button class="btn" id="next-level">Próximo Nível</button>
+      <button class="btn" onclick="backToLobby()">Voltar ao Lobby</button>
+    </div>
+
+    <!-- MOBILE CONTROLS -->
+    <div id="joystick">
+      <div id="stick"></div>
+    </div>
+    <div id="lookArea"></div>
+    <div id="jumpButton">PULAR</div>
+
+    <!-- GAME INSTRUCTIONS -->
+    <!-- ===== INSTRUÇÕES DE CONTROLE DO JOGO ===== -->
+    <div class="instructions">
+      <div>
+        <strong>Controles:</strong><br>
+        WASD: Mover | Mouse: Olhar | Espaço: Pular | Clique: Coletar Corações<br>
+        Tab: Bloquear/Desbloquear Cursor | Clique na tela para iniciar
+      </div>
+    </div>
+
+    <!-- BACK TO LOBBY BUTTON (DURING GAME) -->
+    <button class="back-to-lobby" onclick="backToLobby()">← Voltar ao Lobby</button>
+
+    <!-- THREE.JS LIBRARY -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+      // ===== GAME STATE MANAGEMENT =====
+      let gameData = {
+        playerLevel: 1,
+        playerXP: 150,
+        playerXPRequired: 500,
+        playerCards: 3,
+        completedLevels: [],
+        unlockedLevels: [1],
+        achievements: [],
+        currentLevel: 1,
+        isInGame: false
+      };
+
+      // Level data with XP rewards
+      const levelData = [
+        { id: 1, title: "Primeiro Passo", description: "Aprenda os controles básicos", xp: 100, difficulty: "Fácil" },
+        { id: 2, title: "Subindo Alto", description: "Use trampolins para alcançar o segundo andar", xp: 150, difficulty: "Fácil" },
+        { id: 3, title: "Labirinto", description: "Navegue através do labirinto complexo", xp: 200, difficulty: "Médio" },
+        { id: 4, title: "Espiral Ascendente", description: "Domine os níveis verticais", xp: 250, difficulty: "Médio" },
+        { id: 5, title: "Cruz Sagrada", description: "Encontre o caminho na formação cruz", xp: 300, difficulty: "Médio" },
+        { id: 6, title: "Desafio Final", description: "O teste supremo de habilidade", xp: 400, difficulty: "Difícil" },
+        { id: 7, title: "Saltos Perigosos", description: "Trampolins em sequência mortal", xp: 450, difficulty: "Difícil" },
+        { id: 8, title: "Torre Vertical", description: "Escale a torre mais alta", xp: 500, difficulty: "Extremo" },
+        { id: 9, title: "Plataformas Flutuantes", description: "Salte entre plataformas no vazio", xp: 600, difficulty: "Extremo" },
+        { id: 10, title: "O Mestre dos Corações", description: "O desafio final para verdadeiros mestres", xp: 1000, difficulty: "Lendário" }
+      ];
+
+      // Achievement data
+      const achievementData = [
+        { id: 'first_level', name: 'Primeiro Passo', description: 'Complete seu primeiro nível', icon: '🎯', progress: 0, maxProgress: 1 },
+        { id: 'heart_collector', name: 'Colecionador', description: 'Colete 50 corações', icon: '❤️', progress: 0, maxProgress: 50 },
+        { id: 'speed_runner', name: 'Velocista', description: 'Complete um nível em menos de 60 segundos', icon: '⚡', progress: 0, maxProgress: 1 },
+        { id: 'level_master', name: 'Mestre dos Níveis', description: 'Complete todos os 10 níveis', icon: '👑', progress: 0, maxProgress: 10 },
+        { id: 'no_death', name: 'Sobrevivente', description: 'Complete 5 níveis sem morrer', icon: '🛡️', progress: 0, maxProgress: 5 },
+        { id: 'xp_grinder', name: 'Caçador de XP', description: 'Acumule 5000 XP total', icon: '⭐', progress: 0, maxProgress: 5000 }
+      ];
+
+      // Card data
+      const cardData = [
+        { id: 1, name: 'Coração de Ferro', rarity: 'comum', description: 'Aumenta a vida máxima', unlocked: true },
+        { id: 2, name: 'Pés Velozes', rarity: 'comum', description: 'Aumenta a velocidade de movimento', unlocked: true },
+        { id: 3, name: 'Salto Duplo', rarity: 'raro', description: 'Permite pular duas vezes no ar', unlocked: true },
+        { id: 4, name: 'Ímã de Corações', rarity: 'raro', description: 'Atrai corações automaticamente', unlocked: false },
+        { id: 5, name: 'Escudo Temporal', rarity: 'épico', description: 'Protege contra 1 morte por nível', unlocked: false },
+        { id: 6, name: 'Visão de Raio-X', rarity: 'épico', description: 'Mostra corações através das paredes', unlocked: false },
+        { id: 7, name: 'Mestre do Tempo', rarity: 'lendário', description: 'Ralenta o tempo por 10 segundos', unlocked: false },
+        { id: 8, name: 'Coração Infinito', rarity: 'lendário', description: 'Vida infinita por 1 minuto', unlocked: false }
+      ];
+
+      // ===== TRAILER AND INITIALIZATION =====
+      document.addEventListener('DOMContentLoaded', function() {
+        loadGameData();
+        startTrailer();
+
+        // ===== LISTENER DO BOTÃO INICIAR JOGO =====
+        // Ao clicar, esconde o overlay do botão e o trailer, depois vai ao lobby
+        const startBtn = document.getElementById('start-game-btn');
+        if (startBtn) {
+          startBtn.addEventListener('click', function() {
+            document.getElementById('start-screen-overlay').style.display = 'none';
+            transitionToLobby();
+          });
+        }
+      });
+
+      // ===== FUNÇÃO DO TRAILER =====
+      // O trailer toca ao fundo. O botão INICIAR JOGO já está visível desde o CSS.
+      // Quando falta 1 segundo para o vídeo acabar, congela nesse frame (penúltimo segundo).
+      function startTrailer() {
+        const video = document.getElementById('trailer-video');
+        
+        if (video) {
+          // Auto-play com tratamento para mobile
+          video.onloadeddata = function() {
+            video.play().catch(e => {
+              console.log('Autoplay bloqueado, tentando muted');
+              video.muted = true;
+              video.play().catch(() => {
+                console.log('Vídeo não pode tocar, trailer congelado no primeiro frame');
+              });
+            });
+          };
+
+          // ===== CONGELAR VÍDEO NO PENÚLTIMO SEGUNDO (1s ANTES DO FINAL) =====
+          // Quando o vídeo chega a 1 segundo antes do fim, pausa automaticamente
+          video.addEventListener('timeupdate', function() {
+            if (video.duration > 0 && video.currentTime >= video.duration - 1) {
+              video.pause(); // Congela no frame a 1s do final
+            }
+          });
+
+          // ===== FALLBACK: Se onended disparar, volta ao penúltimo segundo =====
+          video.onended = function() {
+            if (video.duration > 1) {
+              video.currentTime = video.duration - 1;
+            }
+            video.pause();
+          };
+        }
+        // Se não houver vídeo, o botão já está visível pelo CSS (display:flex)
+      }
+
+      // ===== HELPER: GARANTIR VISIBILIDADE DO BOTÃO (segurança) =====
+      // O botão já é visível desde o início via CSS (display:flex)
+      // Esta função existe apenas como fallback de segurança
+      function showStartButton() {
+        const startOverlay = document.getElementById('start-screen-overlay');
+        if (startOverlay) {
+          startOverlay.style.display = 'flex';
+        }
+      }
+
+      function transitionToLobby() {
+        const fadeTransition = document.getElementById('fadeTransition');
+        const trailerContainer = document.getElementById('trailer-container');
+        const lobby = document.getElementById('lobby');
+
+        // Start fade out
+        fadeTransition.classList.add('active');
+
+        setTimeout(() => {
+          trailerContainer.style.display = 'none';
+          lobby.style.display = 'block';
+          initializeLobby();
+          
+          setTimeout(() => {
+            fadeTransition.classList.remove('active');
+          }, 100);
+        }, 1000);
+      }
+
+      // ===== LOBBY INITIALIZATION =====
+      function initializeLobby() {
+        updatePlayerStats();
+        generateLevels();
+        generateAchievements();
+        generateCards();
+        setupNavigation();
+      }
+
+      function updatePlayerStats() {
+        document.getElementById('player-level').textContent = gameData.playerLevel;
+        document.getElementById('player-xp').textContent = gameData.playerXP;
+        document.getElementById('xp-fill').style.width = `${(gameData.playerXP / gameData.playerXPRequired) * 100}%`;
+        document.getElementById('player-cards').textContent = gameData.playerCards;
+      }
+
+      // ===== NAVIGATION SYSTEM =====
+      function setupNavigation() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.content-section');
+
+        navItems.forEach(item => {
+          item.addEventListener('click', () => {
+            // Remove active class from all items
+            navItems.forEach(nav => nav.classList.remove('active'));
+            sections.forEach(section => section.classList.remove('active'));
+
+            // Add active class to clicked item and corresponding section
+            item.classList.add('active');
+            const sectionId = item.getAttribute('data-section') + '-section';
+            document.getElementById(sectionId).classList.add('active');
+          });
+        });
+      }
+
+      // ===== LEVELS GENERATION =====
+      function generateLevels() {
+        const levelsGrid = document.getElementById('levels-grid');
+        levelsGrid.innerHTML = '';
+
+        levelData.forEach(level => {
+          const isCompleted = gameData.completedLevels.includes(level.id);
+          const isUnlocked = gameData.unlockedLevels.includes(level.id);
+          
+          const levelCard = document.createElement('div');
+          levelCard.className = `level-card ${isCompleted ? 'completed' : ''} ${!isUnlocked ? 'locked' : ''}`;
+          
+          levelCard.innerHTML = `
+            <div class="level-number">${level.id}</div>
+            <div class="level-title">${level.title}</div>
+            <div class="level-description">${level.description}</div>
+            <div class="level-stats">
+              <span>Dificuldade: ${level.difficulty}</span>
+              <span class="level-xp">+${level.xp} XP</span>
+            </div>
+          `;
+
+          if (isUnlocked) {
+            levelCard.addEventListener('click', () => startGame(level.id));
+          }
+
+          levelsGrid.appendChild(levelCard);
+        });
+      }
+
+      // ===== ACHIEVEMENTS GENERATION =====
+      function generateAchievements() {
+        const achievementsGrid = document.getElementById('achievements-grid');
+        achievementsGrid.innerHTML = '';
+
+        achievementData.forEach(achievement => {
+          const isUnlocked = gameData.achievements.includes(achievement.id);
+          const progressPercent = Math.min((achievement.progress / achievement.maxProgress) * 100, 100);
+          
+          const achievementCard = document.createElement('div');
+          achievementCard.className = `achievement-card ${isUnlocked ? 'unlocked' : ''}`;
+          
+          achievementCard.innerHTML = `
+            <div class="achievement-header">
+              <div class="achievement-icon">${achievement.icon}</div>
+              <div class="achievement-info">
+                <h3>${achievement.name}</h3>
+                <p>${achievement.description}</p>
+              </div>
+            </div>
+            <div class="achievement-progress">
+              <div class="achievement-progress-fill" style="width: ${progressPercent}%"></div>
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px;">
+              ${achievement.progress}/${achievement.maxProgress}
+            </div>
+          `;
+
+          achievementsGrid.appendChild(achievementCard);
+        });
+      }
+
+      // ===== CARDS GENERATION =====
+      function generateCards() {
+        const cardsGrid = document.getElementById('cards-grid');
+        cardsGrid.innerHTML = '';
+
+        cardData.forEach(card => {
+          const cardItem = document.createElement('div');
+          cardItem.className = `card-item ${!card.unlocked ? 'locked' : ''}`;
+          
+          cardItem.innerHTML = `
+            <div class="card-rarity ${card.rarity}">${card.rarity.toUpperCase()}</div>
+            <div class="card-image">🃏</div>
+            <div class="card-name">${card.name}</div>
+            <div class="card-description">${card.description}</div>
+          `;
+
+          cardsGrid.appendChild(cardItem);
+        });
+      }
+
+      // ===== GAME INTEGRATION =====
+      function startGame(levelId) {
+        gameData.currentLevel = levelId;
+        gameData.isInGame = true;
+
+        // Hide lobby
+        document.getElementById('lobby').style.display = 'none';
+        
+        // Show game elements
+        document.getElementById('gameCanvas').style.display = 'block';
+        document.querySelectorAll('.ui-element').forEach(el => el.classList.add('game-active'));
+        document.querySelector('.instructions').classList.add('game-active');
+        document.querySelector('.back-to-lobby').classList.add('game-active');
+
+        // Start the actual 3D game
+        if (typeof startLevel === 'function') {
+          startLevel(levelId);
+        }
+
+        // Show mobile controls if on mobile
+        if (isMobileDevice()) {
+          document.getElementById('joystick').style.display = 'block';
+          document.getElementById('lookArea').style.display = 'block';
+          document.getElementById('jumpButton').style.display = 'block';
+        }
+      }
+
+      // ===== VOLTAR AO LOBBY - DESBLOQUEIA CURSOR E ESCONDE O JOGO =====
+      function backToLobby() {
+        gameData.isInGame = false;
+
+        // Desbloquear o cursor ao sair do jogo
+        document.exitPointerLock();
+
+        // Hide game elements
+        document.getElementById('gameCanvas').style.display = 'none';
+        document.querySelectorAll('.ui-element').forEach(el => el.classList.remove('game-active'));
+        document.querySelector('.instructions').classList.remove('game-active');
+        document.querySelector('.back-to-lobby').classList.remove('game-active');
+
+        // Hide mobile controls
+        document.getElementById('joystick').style.display = 'none';
+        document.getElementById('lookArea').style.display = 'none';
+        document.getElementById('jumpButton').style.display = 'none';
+
+        // Show lobby
+        document.getElementById('lobby').style.display = 'block';
+        
+        // Refresh lobby data
+        updatePlayerStats();
+        generateLevels();
+      }
+
+      function completeLevel(levelId, heartsCollected = 0) {
+        const level = levelData.find(l => l.id === levelId);
+        if (!level) return;
+
+        // Add to completed levels
+        if (!gameData.completedLevels.includes(levelId)) {
+          gameData.completedLevels.push(levelId);
+        }
+
+        // Unlock next level
+        if (levelId < 10 && !gameData.unlockedLevels.includes(levelId + 1)) {
+          gameData.unlockedLevels.push(levelId + 1);
+        }
+
+        // Award XP
+        const xpGained = level.xp + (heartsCollected * 10);
+        gameData.playerXP += xpGained;
+
+        // Check for level up
+        while (gameData.playerXP >= gameData.playerXPRequired) {
+          gameData.playerXP -= gameData.playerXPRequired;
+          gameData.playerLevel++;
+          gameData.playerXPRequired = Math.floor(gameData.playerXPRequired * 1.5);
+        }
+
+        // Update achievements
+        updateAchievements(levelId, heartsCollected);
+
+        // Show completion message
+        document.getElementById('xp-gained').textContent = `+${xpGained}`;
+        document.getElementById('win-message').classList.remove('hidden');
+
+        // Save progress
+        saveGameData();
+      }
+
+      function updateAchievements(levelId, heartsCollected) {
+        // First level achievement
+        if (levelId === 1 && !gameData.achievements.includes('first_level')) {
+          gameData.achievements.push('first_level');
+        }
+
+        // Update heart collector progress
+        const heartAchievement = achievementData.find(a => a.id === 'heart_collector');
+        if (heartAchievement) {
+          heartAchievement.progress += heartsCollected;
+          if (heartAchievement.progress >= 50 && !gameData.achievements.includes('heart_collector')) {
+            gameData.achievements.push('heart_collector');
+          }
+        }
+
+        // Level master achievement
+        if (gameData.completedLevels.length >= 10 && !gameData.achievements.includes('level_master')) {
+          gameData.achievements.push('level_master');
+        }
+
+        // Update XP grinder
+        const xpAchievement = achievementData.find(a => a.id === 'xp_grinder');
+        if (xpAchievement) {
+          xpAchievement.progress = getTotalXP();
+          if (xpAchievement.progress >= 5000 && !gameData.achievements.includes('xp_grinder')) {
+            gameData.achievements.push('xp_grinder');
+          }
+        }
+      }
+
+      function getTotalXP() {
+        return gameData.completedLevels.reduce((total, levelId) => {
+          const level = levelData.find(l => l.id === levelId);
+          return total + (level ? level.xp : 0);
+        }, 0);
+      }
+
+      // ===== UTILITY FUNCTIONS =====
+      function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               ('ontouchstart' in window);
+      }
+
+      function saveGameData() {
+        localStorage.setItem('gameData', JSON.stringify(gameData));
+        localStorage.setItem('achievementData', JSON.stringify(achievementData));
+      }
+
+      function loadGameData() {
+        const saved = localStorage.getItem('gameData');
+        if (saved) {
+          gameData = { ...gameData, ...JSON.parse(saved) };
+        }
+
+        const savedAchievements = localStorage.getItem('achievementData');
+        if (savedAchievements) {
+          const savedAchievementData = JSON.parse(savedAchievements);
+          achievementData.forEach(achievement => {
+            const saved = savedAchievementData.find(a => a.id === achievement.id);
+            if (saved) {
+              achievement.progress = saved.progress;
+            }
+          });
+        }
+      }
+
+      function resetProgress() {
+        if (confirm('Tem certeza que deseja resetar todo o progresso? Esta ação não pode ser desfeita.')) {
+          localStorage.clear();
+          location.reload();
+        }
+      }
+
+      // ===== EVENT LISTENERS =====
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && gameData.isInGame) {
+          backToLobby();
+        }
+      });
+
+      // Fix CSS property for compatibility
+      const style = document.createElement('style');
+      style.textContent = `
+        .level-number {
+          background-clip: text;
+          -webkit-background-clip: text;
+        }
+      `;
+      document.head.appendChild(style);
+    </script>
+
+    <!-- INCLUDE THE EXISTING GAME SCRIPT -->
+    <script src="script.js"></script>
+
+    <script>
+      // ===== INTEGRATION WITH EXISTING GAME =====
+      
+      // Override the existing win condition to integrate with lobby
+      document.addEventListener('DOMContentLoaded', function() {
+        const nextBtn = document.getElementById('next-level');
+        if (nextBtn) {
+          nextBtn.addEventListener('click', () => {
+            document.getElementById('win-message').classList.add('hidden');
+            if (gameData.currentLevel < 10) {
+              startGame(gameData.currentLevel + 1);
+            } else {
+              backToLobby();
+            }
+          });
+        }
+      });
+
+      // Hook into the 3D game's completion system
+      if (typeof window !== 'undefined') {
+        window.onLevelComplete = function(levelId, score) {
+          const heartsCollected = Math.floor(score / 10);
+          completeLevel(levelId, heartsCollected);
+        };
+      }
+
+      // Initialize audio context on user interaction
+      document.addEventListener('click', function initAudioContext() {
+        if (typeof initAudio === 'function') {
+          initAudio();
+        }
+        document.removeEventListener('click', initAudioContext);
+      }, { once: true });
+
+      // Ensure game canvas is properly sized
+      function resizeGame() {
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas && gameData.isInGame) {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          
+          if (typeof camera !== 'undefined') {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+          }
+          
+          if (typeof renderer !== 'undefined') {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+          }
+        }
+      }
+
+      window.addEventListener('resize', resizeGame);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(resizeGame, 100);
+      });
+
+      console.log('🎮 Lobby system initialized successfully!');
+      console.log('📱 Mobile support:', isMobileDevice() ? 'Enabled' : 'Desktop mode');
+    </script>
+  </body>
+</html>

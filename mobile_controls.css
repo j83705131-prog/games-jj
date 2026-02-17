@@ -1,0 +1,61 @@
+/* Estilo para controles de celular */
+#joystick {
+  position: fixed;
+  bottom: 40px;
+  left: 40px;
+  width: 120px;
+  height: 120px;
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 50%;
+  z-index: 1001;
+  display: none;
+}
+
+#stick {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 60px;
+  height: 60px;
+  background: rgba(200, 200, 200, 0.6);
+  border-radius: 50%;
+  transition: transform 0.1s;
+}
+
+#lookArea {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  height: 70%;
+  z-index: 1000;
+  display: none;
+}
+
+#jumpButton {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 80px;
+  height: 80px;
+  background: rgba(76, 175, 80, 0.6);
+  border-radius: 50%;
+  z-index: 1001;
+  display: none;
+  color: white;
+  text-align: center;
+  line-height: 80px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  #joystick,
+  #lookArea,
+  #jumpButton {
+    display: block;
+  }
+  .instructions {
+    display: none;
+  }
+}
